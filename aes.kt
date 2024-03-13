@@ -13,6 +13,8 @@ private const val CIPHER = "AES"
 private const val HASH_ALGORITHM = "SHA-256"
 private val decoder= Base64.getDecoder()
 private val encoder= Base64.getEncoder()
+val String.base64:String
+    get() = encoder.encodeToString(encodeToByteArray())
 private val IV_BYTES = byteArrayOf(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
 /**
  * Generates SHA256 hash of the password which is used as key
@@ -36,10 +38,10 @@ fun encrypt(key: SecretKeySpec, iv: ByteArray, message: ByteArray): ByteArray {
     cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec)
     return cipher.doFinal(message)
 }
-fun String.encryptByAES(password:String):String{
+fun String.encryptByAES(password:String,iv:ByteArray=IV_BYTES):String{
     try {
         val key = generateKey(password)
-        val cipherText = encrypt(key, IV_BYTES, encodeToByteArray())
+        val cipherText = encrypt(key, iv, encodeToByteArray())
         //NO_WRAP is important as was getting \n at the end
         return encoder.encodeToString(cipherText)
     } catch (e: UnsupportedEncodingException) {
@@ -52,9 +54,9 @@ fun decrypt(key: SecretKeySpec, iv: ByteArray, decodedCipherText: ByteArray): By
     cipher.init(Cipher.DECRYPT_MODE, key, ivSpec)
     return cipher.doFinal(decodedCipherText)
 }
-fun String.decryptByAES(password: String):String{
+fun String.decryptByAES(password: String,iv: ByteArray=IV_BYTES):String{
     try {
-        val decryptedBytes = decrypt(generateKey(password), IV_BYTES, decoder.decode(this))
+        val decryptedBytes = decrypt(generateKey(password), iv, decoder.decode(this))
         return String(decryptedBytes, charset(CHARSET))
     } catch (e: UnsupportedEncodingException) {
         throw GeneralSecurityException(e)
